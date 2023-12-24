@@ -1,20 +1,36 @@
+import React, { useEffect, useRef, useState } from 'react';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css'; // Import Quill's styles
 import { db } from '../utils/firebase-config';
 import { collection, addDoc } from 'firebase/firestore';
-import { useState } from 'react';
 import { generateReferralCode } from '../utils/useReferralCodes';
 
 const Notes = () => {
-    const [note, setNote] = useState("");
     const [referralCode, setReferralCode] = useState("");
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const generatedCode = generateReferralCode(); // Generate the referral code
-        setReferralCode(generatedCode); // Set the referral code state
+    const quillRef = useRef(null);
+    const quillInstance = useRef(null); // To store the Quill instance
+
+    useEffect(() => {
+        if (quillRef.current) {
+            quillInstance.current = new Quill(quillRef.current, {
+                theme: 'snow',
+                modules: {
+                    toolbar: [['bold', 'italic', 'underline'], ['image', 'link']] // Customize as needed
+                }
+            });
+        }
+    }, []);
+
+    const handleSubmit = async () => {
+        const generatedCode = generateReferralCode();
+        setReferralCode(generatedCode);
+
+        const noteContent = quillInstance.current.root.innerHTML; // Get HTML content
 
         try {
             const docRef = await addDoc(collection(db, "notes"), {
-                note: note,
-                referralCode: generatedCode // Use the generated code here
+                note: noteContent, // Save the HTML content
+                referralCode: generatedCode
             });
             console.log("Document written with ID: ", docRef.id);
         } catch (e) {
@@ -25,17 +41,9 @@ const Notes = () => {
     return (
         <>
             Notes
-            <br />
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                />
-                <button type="submit">Submit</button>
-            </form>
-            {referralCode && <p>Generated Referral Code: {referralCode}</p>} {/* Display the code */}
-            <canvas id="myCanvas" width="200" height="100" style="border:1px solid #000000;"/>
+            <div ref={quillRef} style={{ height: 200 }}></div> {/* Quill editor container */}
+            <button onClick={handleSubmit}>Save Note</button>
+            {referralCode && <p>Generated Referral Code: {referralCode}</p>}
         </>
     );
 };
