@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import { db } from '../utils/firebase-config';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { generateReferralCode } from '../utils/useReferralCodes';
 import { useParams } from 'react-router-dom';
 
 const Notes = () => {
-    const { referralCode: urlReferralCode } = useParams(); // Get referral code from URL
+    const { referralCode: urlReferralCode } = useParams();
     const [referralCode, setReferralCode] = useState("");
+    const [noteDocId, setNoteDocId] = useState(null);
     const quillRef = useRef(null);
     const quillInstance = useRef(null);
 
@@ -22,38 +23,49 @@ const Notes = () => {
             });
         }
 
-        if (urlReferralCode) {
-            // Fetch the note from Firebase if there's a referral code
-            const fetchNote = async () => {
-                const q = query(collection(db, "notes"), where("referralCode", "==", urlReferralCode));
-                const querySnapshot = await getDocs(q);
+        const fetchNote = async () => {
+            if (urlReferralCode) {
+                const notesQuery = query(collection(db, "notes"), where("referralCode", "==", urlReferralCode));
+                const querySnapshot = await getDocs(notesQuery);
                 if (!querySnapshot.empty) {
                     const docData = querySnapshot.docs[0].data();
-                    quillInstance.current.root.innerHTML = docData.note; // Set the fetched note content
+                    quillInstance.current.root.innerHTML = docData.note;
+                    setNoteDocId(querySnapshot.docs[0].id);
+                    setReferralCode(urlReferralCode);
                 } else {
                     console.log("No note found for this referral code.");
                 }
-            };
+            }
+        };
 
-            fetchNote();
-        }
-    }, [urlReferralCode]); // Dependency on the URL referral code
+        fetchNote();
+    }, [urlReferralCode]);
 
     const handleSubmit = async () => {
-        // Generate a new referral code only if creating a new note
-        const generatedCode = urlReferralCode ? urlReferralCode : generateReferralCode();
-        setReferralCode(generatedCode);
-
         const noteContent = quillInstance.current.root.innerHTML;
 
-        try {
-            const docRef = await addDoc(collection(db, "notes"), {
-                note: noteContent,
-                referralCode: generatedCode
-            });
-            console.log("Document written with ID: ", docRef.id);
-        } catch (e) {
-            console.error("Error adding document: ", e);
+        if (urlReferralCode && noteDocId) {
+            try {
+                const noteRef = doc(db, "notes", noteDocId);
+                await updateDoc(noteRef, { note: noteContent });
+                console.log("Note updated with ID: ", noteDocId);
+            } catch (e) {
+                console.error("Error updating document: ", e);
+            }
+        } else {
+            // Save as a new note
+            try {
+                const generatedCode = generateReferralCode();
+                setReferralCode(generatedCode);
+                const docRef = await addDoc(collection(db, "notes"), {
+                    note: noteContent,
+                    referralCode: generatedCode
+                });
+                setNoteDocId(docRef.id);
+                console.log("Document written with ID: ", docRef.id);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
         }
     };
 
