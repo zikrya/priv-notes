@@ -5,6 +5,7 @@ import { db } from '../utils/firebase-config';
 import { collection, addDoc } from 'firebase/firestore';
 import { generateReferralCode } from '../utils/useReferralCodes';
 import { useParams } from 'react-router-dom';
+import FirebaseUploadAdapter from '../utils/FirebaseUploadAdapter';
 
 const Notes = () => {
     const { referralCode: urlReferralCode } = useParams();
@@ -30,12 +31,21 @@ const Notes = () => {
         }
     };
 
+    const useFirebaseUploadAdapter = (editor) => {
+        editor.plugins.get('FileRepository').createUploadAdapter = (loader) => {
+            return new FirebaseUploadAdapter(loader);
+        };
+    };
+
     return (
         <>
             <CKEditor
                 editor={ClassicEditor}
                 data={content}
                 onChange={handleEditorChange}
+                onReady={editor => {
+                    useFirebaseUploadAdapter(editor);
+                }}
             />
             <button onClick={handleSubmit}>{urlReferralCode ? 'Update Note' : 'Save Note'}</button>
             {referralCode && <p>Generated Referral Code: {referralCode}</p>}
@@ -44,4 +54,5 @@ const Notes = () => {
 };
 
 export default Notes;
+
 
