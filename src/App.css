@@ -2,10 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-.DraftEditor-root .Arial {
-    font-family: Arial, sans-serif;
-  }
 
-.DraftEditor-root .Georgia {
-    font-family: Georgia, 'Times New Roman', Times;
+.note-container {
+    background-color: #fff; /* or any off-white color like #f9f9f9 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* to give a slight shadow like a piece of paper */
+    margin: 20px auto; /* to center it on the page and give some space around */
+    padding: 20px;
+    max-width: 800px; /* or any width you prefer */
+    border-radius: 8px; /* to give rounded corners */
+}
+
+.note-title {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 20px; /* space between title and content */
+    color: #333; /* dark grey for text */
+}
+
+.note-content {
+    font-size: 1em;
+    color: #333;
+    line-height: 1.6; /* to make reading easier */
+}
+
+/* Style for the editor part */
+.DraftEditor-root {
+    min-height: 1000px;
+    width: 80%; /* or any specific width you prefer */
+    margin: 0 auto; /* this will center your editor if the width is less than 100% */
 }

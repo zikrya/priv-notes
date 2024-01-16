@@ -9,7 +9,7 @@ import { useParams } from 'react-router-dom';
 import ImageRender from '../components/ImageRender';
 import AudioRender from '../components/AudioRender';
 import VideoRender from '../components/VideoRender';
-
+import '../App.css';
 
 
 const Notes = () => {
@@ -20,6 +20,11 @@ const Notes = () => {
     const audioInputRef = useRef(null);
     const videoInputRef = useRef(null);
     const { referralCode: urlReferralCode } = useParams();
+
+    const fontStyles = [
+        { label: 'Arial', style: 'Arial' },
+        { label: 'Georgia', style: 'Georgia' },
+      ];
 
     const handleKeyCommand = (command) => {
         const newState = RichUtils.handleKeyCommand(editorState, command);
@@ -40,22 +45,30 @@ const Notes = () => {
       const toggleBlockType = (blockType) => {
         setEditorState(RichUtils.toggleBlockType(editorState, blockType));
       };
-      const applyFontStyle = (fontStyle) => {
+
+      const applyFontStyle = (editorState, fontStyle) => {
         const selection = editorState.getSelection();
-        const nextContentState = Object.keys(fontStyle)
+        const nextContentState = Object.keys(fontStyles)
           .reduce((contentState, font) => {
-            return Modifier.applyInlineStyle(contentState, selection, font);
+            return Modifier.removeInlineStyle(contentState, selection, font)
           }, editorState.getCurrentContent());
 
         let nextEditorState = EditorState.push(editorState, nextContentState, 'change-inline-style');
 
         const currentStyle = editorState.getCurrentInlineStyle();
-        nextEditorState = currentStyle.reduce((state, style) => {
-          return RichUtils.toggleInlineStyle(state, style);
-        }, nextEditorState);
+        if (selection.isCollapsed()) {
+          nextEditorState = currentStyle.reduce((state, font) => {
+            return RichUtils.toggleInlineStyle(state, font);
+          }, nextEditorState);
+        }
 
-        setEditorState(nextEditorState);
+        if (!currentStyle.has(fontStyle)) {
+          nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, fontStyle);
+        }
+
+        return nextEditorState;
       };
+
     useEffect(() => {
         if (urlReferralCode) {
             // Fetch the note content from Firestore using the referral code
@@ -256,13 +269,21 @@ const Notes = () => {
 
     return (
         <>
-              <select onChange={(e) => applyFontStyle({FONTSTYLE: e.target.value})}>
-        <option value="Arial">Arial</option>
-        <option value="Georgia">Georgia</option>
-        {/* Add more font options here */}
-      </select>
+           <select
+            onChange={(e) => {
+            const newEditorState = applyFontStyle(editorState, e.target.value);
+            setEditorState(newEditorState);
+             }}
+            >
+           {fontStyles.map((font) => (
+           <option key={font.style} value={font.style}>
+            {font.label}
+            </option>
+             ))}
+          </select>
       &nbsp; &nbsp;
         <button onClick={onBoldClick}>Bold</button>
+        &nbsp; &nbsp;
         <button onClick={() => toggleBlockType('unordered-list-item')}>Bullet List</button>
         &nbsp; &nbsp;
             <input
@@ -301,11 +322,17 @@ const Notes = () => {
                 Upload Vid
             </button>
 
-            <Editor
-                editorState={editorState}
-                onChange={handleEditorChange}
-                blockRendererFn={mediaBlockRenderer}
+            <div className="note-container">
+               <div className="note-title">
+              {/* Title goes here */}
+             </div>
+           <Editor
+            editorState={editorState}
+            onChange={handleEditorChange}
+            blockRendererFn={mediaBlockRenderer}
+    // Additional props as needed
             />
+          </div>
             <button onClick={handleSubmit}>Save Note</button>
             {referralCode && <p>Your Referral Code: {referralCode}</p>}
 
