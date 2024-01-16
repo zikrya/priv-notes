@@ -7,6 +7,8 @@ import { getStorage, ref as firebaseRef, uploadBytes, getDownloadURL } from 'fir
 import { generateReferralCode } from '../utils/useReferralCodes';
 import { useParams } from 'react-router-dom';
 import ImageRender from '../components/ImageRender';
+import AudioRender from '../components/AudioRender';
+import VideoRender from '../components/VideoRender';
 import createImagePlugin from '@draft-js-plugins/image';
 
 
@@ -15,6 +17,8 @@ const Notes = () => {
     const [editorState, setEditorState] = useState(EditorState.createEmpty());
     const [referralCode, setReferralCode] = useState('');
     const imageInputRef = useRef(null);
+    const audioInputRef = useRef(null);
+    const videoInputRef = useRef(null);
     const { referralCode: urlReferralCode } = useParams();
 
     useEffect(() => {
@@ -63,19 +67,88 @@ const Notes = () => {
         setEditorState(AtomicBlockUtils.insertAtomicBlock(newEditorState, entityKey, ' '));
     };
 
-    const mediaBlockRenderer = (block) => {
+    const handleAudioUpload = async (event) => {
+        const file = event.target.files[0];
+        if (file && file.type.startsWith('audio/')) {
+          const storage = getStorage();
+          const storagePath = `audios/${Date.now()}-${file.name}`;
+          const audioRef = firebaseRef(storage, storagePath);
+
+          try {
+            const uploadResult = await uploadBytes(audioRef, file);
+            const audioURL = await getDownloadURL(uploadResult.ref);
+            insertAudioInEditor(audioURL);
+          } catch (error) {
+            console.error('Error uploading audio: ', error);
+          }
+        }
+      };
+
+      const insertAudioInEditor = (audioUrl) => {
+        const contentState = editorState.getCurrentContent();
+        const contentStateWithEntity = contentState.createEntity(
+          'AUDIO',
+          'IMMUTABLE',
+          { src: audioUrl }
+        );
+        const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+        const newEditorState = EditorState.set(
+          editorState,
+          { currentContent: contentStateWithEntity }
+        );
+        setEditorState(
+          AtomicBlockUtils.insertAtomicBlock(newEditorState, entityKey, ' ')
+        );
+      };
+      const handleVideoUpload = async (event) => {
+        const file = event.target.files[0];
+        if (file && file.type.startsWith('videos/')) {
+          const storage = getStorage();
+          const storagePath = `videos/${Date.now()}-${file.name}`;
+          const videoRef = firebaseRef(storage, storagePath);
+
+          try {
+            const uploadResult = await uploadBytes(videoRef, file);
+            const videoURL = await getDownloadURL(uploadResult.ref);
+            insertVideoInEditor(videoURL);
+          } catch (error) {
+            console.error('Error uploading video: ', error);
+          }
+        }
+      };
+      const insertVideoInEditor = (videoUrl) => {
+        const contentState = editorState.getCurrentContent();
+        const contentStateWithEntity = contentState.createEntity(
+          'VIDEO',
+          'IMMUTABLE',
+          { src: videoUrl }
+        );
+        const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+        const newEditorState = EditorState.set(
+          editorState,
+          { currentContent: contentStateWithEntity }
+        );
+        setEditorState(
+          AtomicBlockUtils.insertAtomicBlock(newEditorState, entityKey, ' ')
+        );
+      };
+
+      const mediaBlockRenderer = (block) => {
         if (block.getType() === 'atomic') {
           const contentState = editorState.getCurrentContent();
           const entityKey = block.getEntityAt(0);
+
           if (!entityKey) {
             return null;
           }
+
           const entity = contentState.getEntity(entityKey);
           if (!entity) {
             return null;
           }
+
           const type = entity.getType();
-          const src = entity.getData().src;
+          const { src } = entity.getData();
 
           if (type === 'IMAGE') {
             return {
@@ -85,11 +158,28 @@ const Notes = () => {
                 src,
               },
             };
+          } else if (type === 'AUDIO') {
+            return {
+              component: AudioRender,
+              editable: false,
+              props: {
+                src,
+              },
+            };
+          } else if (type === 'VIDEO') {
+            return {
+                component: VideoRender,
+                editable: false,
+                props: {
+                  src,
+                },
+              };
           }
         }
-
         return null;
       };
+
+
 
 
       const handleSubmit = async () => {
@@ -140,6 +230,32 @@ const Notes = () => {
             <button onClick={() => imageInputRef.current && imageInputRef.current.click()}>
                 Upload Image
             </button>
+            &nbsp; &nbsp;
+            <input
+              type="file"
+              accept="audio/*"
+              style={{ display: 'none' }}
+              ref={audioInputRef}
+              onChange={handleAudioUpload}
+            />
+
+            <button onClick={() => audioInputRef.current && audioInputRef.current.click()}>
+                Upload Audio
+            </button>
+
+            &nbsp; &nbsp;
+            <input
+              type="file"
+              accept="video/*"
+              style={{ display: 'none' }}
+              ref={videoInputRef}
+              onChange={handleVideoUpload}
+            />
+
+            <button onClick={() => videoInputRef.current && videoInputRef.current.click()}>
+                Upload Vid
+            </button>
+
             <Editor
                 editorState={editorState}
                 onChange={handleEditorChange}
@@ -147,6 +263,7 @@ const Notes = () => {
             />
             <button onClick={handleSubmit}>Save Note</button>
             {referralCode && <p>Your Referral Code: {referralCode}</p>}
+
         </>
     );
 };
