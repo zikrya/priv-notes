@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Editor, EditorState, convertFromRaw, convertToRaw, AtomicBlockUtils, Entity, ContentState } from 'draft-js';
+import { Editor, EditorState, convertFromRaw, convertToRaw, AtomicBlockUtils, Entity, ContentState, RichUtils, Modifier } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import { db, storage } from '../utils/firebase-config'; // Import your firebase config
 import { collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
@@ -9,7 +9,7 @@ import { useParams } from 'react-router-dom';
 import ImageRender from '../components/ImageRender';
 import AudioRender from '../components/AudioRender';
 import VideoRender from '../components/VideoRender';
-import createImagePlugin from '@draft-js-plugins/image';
+
 
 
 const Notes = () => {
@@ -21,6 +21,41 @@ const Notes = () => {
     const videoInputRef = useRef(null);
     const { referralCode: urlReferralCode } = useParams();
 
+    const handleKeyCommand = (command) => {
+        const newState = RichUtils.handleKeyCommand(editorState, command);
+        if (newState) {
+          setEditorState(newState);
+          return 'handled';
+        }
+        return 'not-handled';
+      };
+      const onBoldClick = () => {
+        setEditorState(RichUtils.toggleInlineStyle(editorState, 'BOLD'));
+      };
+
+      const toggleInlineStyle = (inlineStyle) => {
+        setEditorState(RichUtils.toggleInlineStyle(editorState, inlineStyle));
+      };
+
+      const toggleBlockType = (blockType) => {
+        setEditorState(RichUtils.toggleBlockType(editorState, blockType));
+      };
+      const applyFontStyle = (fontStyle) => {
+        const selection = editorState.getSelection();
+        const nextContentState = Object.keys(fontStyle)
+          .reduce((contentState, font) => {
+            return Modifier.applyInlineStyle(contentState, selection, font);
+          }, editorState.getCurrentContent());
+
+        let nextEditorState = EditorState.push(editorState, nextContentState, 'change-inline-style');
+
+        const currentStyle = editorState.getCurrentInlineStyle();
+        nextEditorState = currentStyle.reduce((state, style) => {
+          return RichUtils.toggleInlineStyle(state, style);
+        }, nextEditorState);
+
+        setEditorState(nextEditorState);
+      };
     useEffect(() => {
         if (urlReferralCode) {
             // Fetch the note content from Firestore using the referral code
@@ -221,6 +256,15 @@ const Notes = () => {
 
     return (
         <>
+              <select onChange={(e) => applyFontStyle({FONTSTYLE: e.target.value})}>
+        <option value="Arial">Arial</option>
+        <option value="Georgia">Georgia</option>
+        {/* Add more font options here */}
+      </select>
+      &nbsp; &nbsp;
+        <button onClick={onBoldClick}>Bold</button>
+        <button onClick={() => toggleBlockType('unordered-list-item')}>Bullet List</button>
+        &nbsp; &nbsp;
             <input
                 type="file"
                 accept="image/*"

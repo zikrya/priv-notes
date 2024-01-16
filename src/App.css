@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.DraftEditor-root .Arial {
+    font-family: Arial, sans-serif;
+  }
+
+.DraftEditor-root .Georgia {
+    font-family: Georgia, 'Times New Roman', Times;
+}
