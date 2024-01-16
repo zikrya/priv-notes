@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Editor, EditorState, convertFromRaw, convertToRaw, AtomicBlockUtils, Entity, ContentState } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import { db, storage } from '../utils/firebase-config'; // Import your firebase config
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { getStorage, ref as firebaseRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { generateReferralCode } from '../utils/useReferralCodes';
 import { useParams } from 'react-router-dom';
+import ImageRender from '../components/ImageRender';
 import createImagePlugin from '@draft-js-plugins/image';
 
 
@@ -62,20 +63,70 @@ const Notes = () => {
         setEditorState(AtomicBlockUtils.insertAtomicBlock(newEditorState, entityKey, ' '));
     };
 
-    const handleSubmit = async () => {
+    const mediaBlockRenderer = (block) => {
+        if (block.getType() === 'atomic') {
+          const contentState = editorState.getCurrentContent();
+          const entityKey = block.getEntityAt(0);
+          if (!entityKey) {
+            return null;
+          }
+          const entity = contentState.getEntity(entityKey);
+          if (!entity) {
+            return null;
+          }
+          const type = entity.getType();
+          const src = entity.getData().src;
+
+          if (type === 'IMAGE') {
+            return {
+              component: ImageRender,
+              editable: false,
+              props: {
+                src,
+              },
+            };
+          }
+        }
+
+        return null;
+      };
+
+
+      const handleSubmit = async () => {
         const contentState = editorState.getCurrentContent();
         const rawContent = convertToRaw(contentState);
-        const newReferralCode = generateReferralCode();
-        setReferralCode(newReferralCode);
-        try {
-            await addDoc(collection(db, "notes"), {
-                note: rawContent,
-                referralCode: newReferralCode
-            });
-        } catch (e) {
-            console.error("Error saving document: ", e);
+
+        if (urlReferralCode) {
+            // Update the existing note with the new content
+            try {
+                const notesRef = collection(db, "notes");
+                const q = query(notesRef, where("referralCode", "==", urlReferralCode));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const docRef = querySnapshot.docs[0].ref;
+                    await updateDoc(docRef, { note: rawContent });
+                    console.log("Note updated with referral code: ", urlReferralCode);
+                }
+            } catch (e) {
+                console.error("Error updating document: ", e);
+            }
+        } else {
+            // Create a new note with a new referral code
+            try {
+                const newReferralCode = generateReferralCode();
+                const docRef = await addDoc(collection(db, "notes"), {
+                    note: rawContent,
+                    referralCode: newReferralCode
+                });
+                setReferralCode(newReferralCode); // Only set a new referral code here
+                console.log("Document written with ID: ", docRef.id);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
         }
     };
+
 
     return (
         <>
@@ -89,7 +140,11 @@ const Notes = () => {
             <button onClick={() => imageInputRef.current && imageInputRef.current.click()}>
                 Upload Image
             </button>
-            <Editor editorState={editorState} onChange={handleEditorChange} />
+            <Editor
+                editorState={editorState}
+                onChange={handleEditorChange}
+                blockRendererFn={mediaBlockRenderer}
+            />
             <button onClick={handleSubmit}>Save Note</button>
             {referralCode && <p>Your Referral Code: {referralCode}</p>}
         </>
