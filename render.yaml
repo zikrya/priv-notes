@@ -1,0 +1,11 @@
+services:
+- type: web
+  env: static
+  name: priv-notes
+  staticPublishPath: ./dist
+  buildCommand: npm run build
+  startCommand: serve dist -s
+  routes:
+    - type: rewrite
+      source: /*
+      destination: /index.html
