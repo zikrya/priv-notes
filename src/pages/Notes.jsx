@@ -13,7 +13,7 @@ import createImagePlugin from '@draft-js-plugins/image';
 
 
 const Notes = () => {
-    const imagePlugin = createImagePlugin();
+    //const imagePlugin = createImagePlugin();
     const [editorState, setEditorState] = useState(EditorState.createEmpty());
     const [referralCode, setReferralCode] = useState('');
     const imageInputRef = useRef(null);
@@ -102,7 +102,7 @@ const Notes = () => {
       };
       const handleVideoUpload = async (event) => {
         const file = event.target.files[0];
-        if (file && file.type.startsWith('videos/')) {
+        if (file && file.type.startsWith('video/')) {
           const storage = getStorage();
           const storagePath = `videos/${Date.now()}-${file.name}`;
           const videoRef = firebaseRef(storage, storagePath);
@@ -171,10 +171,11 @@ const Notes = () => {
                 component: VideoRender,
                 editable: false,
                 props: {
-                  src,
+                    block,
+                    contentState,
                 },
-              };
-          }
+            };
+        }
         }
         return null;
       };
