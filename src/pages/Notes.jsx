@@ -319,7 +319,7 @@ const Notes = () => {
             />
 
             <button onClick={() => videoInputRef.current && videoInputRef.current.click()}>
-                Upload Vid
+                Upload Video
             </button>
 
             <div className="note-container">
