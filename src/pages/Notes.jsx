@@ -20,6 +20,44 @@ const Notes = () => {
     const audioInputRef = useRef(null);
     const videoInputRef = useRef(null);
     const { referralCode: urlReferralCode } = useParams();
+    const editor = useRef(null);
+
+    const focusEditor = () => {
+        if (editor.current) {
+            editor.current.focus();
+            const currentContent = editorState.getCurrentContent();
+            const lastBlock = currentContent.getBlockMap().last();
+
+            const key = lastBlock.getKey();
+            const length = lastBlock.getLength();
+
+            const selection = SelectionState.createEmpty(key).merge({
+                anchorOffset: length,
+                focusOffset: length,
+            });
+
+            const newEditorState = EditorState.forceSelection(editorState, selection);
+            setEditorState(newEditorState);
+        }
+    };
+
+    const handleFocus = () => {
+        focusEditor();
+        const editorDOM = editor.current?.editor;
+        if (editorDOM) {
+            editorDOM.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
+    useEffect(() => {
+        const editorDOM = editor.current?.editor;
+        editorDOM.addEventListener('focus', handleFocus);
+
+        // Clean up
+        return () => {
+            editorDOM.removeEventListener('focus', handleFocus);
+        };
+    }, []);
 
     const fontStyles = [
         { label: 'Arial', style: 'Arial' },
@@ -319,19 +357,20 @@ const Notes = () => {
             />
 
             <button onClick={() => videoInputRef.current && videoInputRef.current.click()}>
-                Upload Video
+                Upload Vid
             </button>
 
             <div className="note-container">
                <div className="note-title">
-              {/* Title goes here */}
              </div>
+             <div onClick={focusEditor}>
            <Editor
+           ref={editor}
             editorState={editorState}
             onChange={handleEditorChange}
             blockRendererFn={mediaBlockRenderer}
-    // Additional props as needed
             />
+            </div>
           </div>
             <button onClick={handleSubmit}>Save Note</button>
             {referralCode && <p>Your Referral Code: {referralCode}</p>}
