@@ -384,7 +384,6 @@ const Notes = () => {
           <div className="flex justify-center">
             <button className="p-2 rounded bg-blue-500 text-white mx-2 hover:bg-blue-600 mt-4" onClick={handleSubmit}>Save Note</button>
             </div>
-            {referralCode && <p>Your Referral Code: {referralCode}</p>}
 
         </>
     );
