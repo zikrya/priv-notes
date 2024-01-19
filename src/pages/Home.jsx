@@ -11,19 +11,32 @@ const Home = () => {
     };
 
     return (
-        <>
-            Enter Referral
-            <br />
+        <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
+            <div className="text-lg font-semibold mb-4">
+                Enter Referral
+            </div>
+
             <input
                 type="text"
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value)}
                 placeholder="Referral Code"
+                className="p-2 mb-2 rounded border border-gray-300"
             />
-            <button onClick={handleReferralSubmit}>Go to Note</button>
-            <br /><br />
-            <Link to="/notes">Create Section</Link>
-        </>
+            <button
+                onClick={handleReferralSubmit}
+                className="p-2 mb-4 rounded bg-blue-500 text-white hover:bg-blue-600"
+            >
+                Go to Note
+            </button>
+
+            <Link
+                to="/notes"
+                className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+                Create Section
+            </Link>
+        </div>
     );
 };
 
