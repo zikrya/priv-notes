@@ -4,28 +4,27 @@
 
 
 .note-container {
-    background-color: #fff; /* or any off-white color like #f9f9f9 */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* to give a slight shadow like a piece of paper */
-    margin: 20px auto; /* to center it on the page and give some space around */
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin: 20px auto;
     padding: 20px;
-    max-width: 800px; /* or any width you prefer */
-    border-radius: 8px; /* to give rounded corners */
+    max-width: 800px;
+    border-radius: 8px;
 }
 
 .note-title {
     font-size: 1.5em;
     font-weight: bold;
-    margin-bottom: 20px; /* space between title and content */
-    color: #333; /* dark grey for text */
+    margin-bottom: 20px;
+    color: #333;
 }
 
 .note-content {
     font-size: 1em;
     color: #333;
-    line-height: 1.6; /* to make reading easier */
+    line-height: 1.6;
 }
 
-/* Style for the editor part */
 .DraftEditor-root {
     min-height: 1000px;
 }

@@ -312,6 +312,7 @@ const Notes = () => {
             const newEditorState = applyFontStyle(editorState, e.target.value);
             setEditorState(newEditorState);
              }}
+             className="p-2 rounded bg-gray-100 mx-2 text-gray-700 hover:bg-gray-200"
             >
            {fontStyles.map((font) => (
            <option key={font.style} value={font.style}>
@@ -319,10 +320,11 @@ const Notes = () => {
             </option>
              ))}
           </select>
+
       &nbsp; &nbsp;
-        <button onClick={onBoldClick}>Bold</button>
+        <button className="p-2 rounded bg-gray-100 mx-2 hover:bg-gray-200" onClick={onBoldClick}><span><img width="20" height="20" src="https://img.icons8.com/ios-glyphs/30/bold.png" alt="bold"/></span></button>
         &nbsp; &nbsp;
-        <button onClick={() => toggleBlockType('unordered-list-item')}>Bullet List</button>
+        <button className="p-2 rounded bg-gray-100 mx-2 hover:bg-gray-200" onClick={() => toggleBlockType('unordered-list-item')}><span><img width="20" height="20" src="https://img.icons8.com/ios-glyphs/30/overview-pages-3--v2.png" alt="overview-pages-3--v2"/></span></button>
         &nbsp; &nbsp;
             <input
                 type="file"
@@ -331,8 +333,8 @@ const Notes = () => {
                 onChange={handleImageUpload}
                 ref={imageInputRef}
             />
-            <button onClick={() => imageInputRef.current && imageInputRef.current.click()}>
-                Upload Image
+            <button className="p-2 rounded bg-gray-100 mx-2 hover:bg-gray-200" onClick={() => imageInputRef.current && imageInputRef.current.click()}>
+                <span><img width="24" height="24" src="https://img.icons8.com/material-outlined/24/add-image.png" alt="add-image"/></span>
             </button>
             &nbsp; &nbsp;
             <input
@@ -343,8 +345,8 @@ const Notes = () => {
               onChange={handleAudioUpload}
             />
 
-            <button onClick={() => audioInputRef.current && audioInputRef.current.click()}>
-                Upload Audio
+            <button className="p-2 rounded bg-gray-100 mx-2 hover:bg-gray-200" onClick={() => audioInputRef.current && audioInputRef.current.click()}>
+                <span><img width="22" height="22" src="https://img.icons8.com/ios-filled/50/high-volume--v1.png" alt="high-volume--v1"/></span>
             </button>
 
             &nbsp; &nbsp;
@@ -356,14 +358,14 @@ const Notes = () => {
               onChange={handleVideoUpload}
             />
 
-            <button onClick={() => videoInputRef.current && videoInputRef.current.click()}>
-                Upload Vid
+            <button className="p-2 rounded bg-gray-100 mx-2 hover:bg-gray-200" onClick={() => videoInputRef.current && videoInputRef.current.click()}>
+                <span><img width="22" height="22" src="https://img.icons8.com/ios-filled/50/video.png" alt="video"/></span>
             </button>
 
-            <div className="note-container">
-               <div className="note-title">
+            <div className="note-container bg-white shadow-md mx-auto my-4 p-6 max-w-screen-md rounded-lg">
+               <div className="note-title text-2xl font-semibold text-gray-900 mb-4">
              </div>
-             <div onClick={focusEditor}>
+             <div className="DraftEditor-root min-h-[500px] text-base text-gray-800 leading-relaxed" onClick={focusEditor}>
            <Editor
            ref={editor}
             editorState={editorState}
@@ -372,7 +374,7 @@ const Notes = () => {
             />
             </div>
           </div>
-            <button onClick={handleSubmit}>Save Note</button>
+            <button className="p-2 rounded bg-blue-500 text-white mx-2 hover:bg-blue-600 mt-4" onClick={handleSubmit}>Save Note</button>
             {referralCode && <p>Your Referral Code: {referralCode}</p>}
 
         </>
