@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Editor, EditorState, convertFromRaw, convertToRaw, AtomicBlockUtils, Entity, ContentState, RichUtils, Modifier, SelectionState } from 'draft-js';
+import { Editor, EditorState, convertFromRaw, convertToRaw, AtomicBlockUtils, RichUtils, Modifier, SelectionState } from 'draft-js';
 import 'draft-js/dist/Draft.css';
-import { db, storage } from '../utils/firebase-config'; // Import your firebase config
+import { db, storage } from '../utils/firebase-config';
 import { collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { getStorage, ref as firebaseRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { generateReferralCode } from '../utils/useReferralCodes';
@@ -13,7 +13,6 @@ import '../App.css';
 
 
 const Notes = () => {
-    //const imagePlugin = createImagePlugin();
     const [editorState, setEditorState] = useState(() => EditorState.createEmpty());
     const [referralCode, setReferralCode] = useState('');
     const imageInputRef = useRef(null);
@@ -22,6 +21,8 @@ const Notes = () => {
     const { referralCode: urlReferralCode } = useParams();
     const isBoldActive = editorState.getCurrentInlineStyle().has('BOLD');
     const editor = useRef(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
 
     const focusEditorEnd = () => {
         if (editor.current) {
@@ -256,7 +257,6 @@ const Notes = () => {
         const rawContent = convertToRaw(contentState);
 
         if (urlReferralCode) {
-            // Update the existing note with the new content
             try {
                 const notesRef = collection(db, "notes");
                 const q = query(notesRef, where("referralCode", "==", urlReferralCode));
@@ -271,19 +271,46 @@ const Notes = () => {
                 console.error("Error updating document: ", e);
             }
         } else {
-            // Create a new note with a new referral code
             try {
                 const newReferralCode = generateReferralCode();
                 const docRef = await addDoc(collection(db, "notes"), {
                     note: rawContent,
                     referralCode: newReferralCode
                 });
-                setReferralCode(newReferralCode); // Only set a new referral code here
+                setReferralCode(newReferralCode);
                 console.log("Document written with ID: ", docRef.id);
             } catch (e) {
                 console.error("Error adding document: ", e);
             }
         }
+        setIsModalOpen(true);
+    };
+
+    const Modal = ({ isOpen, onClose, referralCode }) => {
+        const modalRef = useRef();
+
+        const handleOutsideClick = (e) => {
+            if (modalRef.current && !modalRef.current.contains(e.target)) {
+                onClose();
+            }
+        };
+
+        useEffect(() => {
+            document.addEventListener("mousedown", handleOutsideClick);
+            return () => document.removeEventListener("mousedown", handleOutsideClick);
+        }, []);
+
+        if (!isOpen) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+                <div ref={modalRef} className="bg-white p-4 rounded">
+                    <h2 className="text-lg">Your Referral Code</h2>
+                    <p>{referralCode}</p>
+                    <button onClick={onClose}>Close</button>
+                </div>
+            </div>
+        );
     };
 
 
@@ -311,8 +338,8 @@ const Notes = () => {
   type='button'
   style={{ backgroundColor: isBoldActive ? 'blue' : 'white' }}
   onMouseDown={(e) => {
-    e.preventDefault(); // Prevent the default action to keep the focus on the editor
-    setEditorState(RichUtils.toggleInlineStyle(editorState, 'BOLD')); // Update the editor state
+    e.preventDefault();
+    setEditorState(RichUtils.toggleInlineStyle(editorState, 'BOLD'));
   }}
 >
   <span><img width="20" height="20" src="https://img.icons8.com/ios-glyphs/30/bold.png" alt="bold"/></span>
@@ -322,8 +349,8 @@ const Notes = () => {
   className="p-2 rounded bg-white mx-2 mb-2"
   type='button'
   onMouseDown={(e) => {
-    e.preventDefault(); // Prevent the default action to keep the focus on the editor
-    setEditorState(RichUtils.toggleBlockType(editorState, 'unordered-list-item')); // Toggle bullet points
+    e.preventDefault();
+    setEditorState(RichUtils.toggleBlockType(editorState, 'unordered-list-item'));
   }}
 >
   <span><img width="20" height="20" src="https://img.icons8.com/ios-glyphs/30/overview-pages-3--v2.png" alt="bullet points"/></span>
@@ -366,9 +393,10 @@ const Notes = () => {
             </button>
             </div>
             <div className="flex justify-end flex-grow-0">
-               <button className="p-2 rounded bg-blue-500 text-white mx-2 hover:bg-blue-600" onClick={handleSubmit}>Save Note</button>
-               {referralCode && <p className="text-sm mx-2">{referralCode}</p>}
+            <button className="p-2 rounded bg-blue-500 text-white mx-2 hover:bg-blue-600" onClick={handleSubmit}>Save Note</button>
+            {referralCode && <p className="text-sm mx-2">{referralCode}</p>}
             </div>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} referralCode={referralCode} />
             </div>
             <div className="note-container bg-white shadow-md mx-auto my-4 p-6 max-w-screen-md rounded-lg">
                <div className="note-title text-2xl font-semibold text-gray-900 mb-4">
