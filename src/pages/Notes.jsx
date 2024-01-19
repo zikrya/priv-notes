@@ -303,15 +303,18 @@ const Notes = () => {
         if (!isOpen) return null;
 
         return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-                <div ref={modalRef} className="bg-white p-4 rounded">
-                    <h2 className="text-lg">Your Referral Code</h2>
-                    <p>{referralCode}</p>
-                    <button onClick={onClose}>Close</button>
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
+                <div ref={modalRef} className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+                    <h2 className="text-xl font-semibold mb-4">Your Referral Code</h2>
+                    <p className="mb-4">{referralCode}</p>
+                    <button onClick={onClose} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Close
+                    </button>
                 </div>
             </div>
         );
     };
+
 
 
     return (
