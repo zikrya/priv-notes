@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Editor, EditorState, convertFromRaw, convertToRaw, AtomicBlockUtils, Entity, ContentState, RichUtils, Modifier } from 'draft-js';
+import { Editor, EditorState, convertFromRaw, convertToRaw, AtomicBlockUtils, Entity, ContentState, RichUtils, Modifier, SelectionState } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import { db, storage } from '../utils/firebase-config'; // Import your firebase config
 import { collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
@@ -14,15 +14,16 @@ import '../App.css';
 
 const Notes = () => {
     //const imagePlugin = createImagePlugin();
-    const [editorState, setEditorState] = useState(EditorState.createEmpty());
+    const [editorState, setEditorState] = useState(() => EditorState.createEmpty());
     const [referralCode, setReferralCode] = useState('');
     const imageInputRef = useRef(null);
     const audioInputRef = useRef(null);
     const videoInputRef = useRef(null);
     const { referralCode: urlReferralCode } = useParams();
+    const isBoldActive = editorState.getCurrentInlineStyle().has('BOLD');
     const editor = useRef(null);
 
-    const focusEditor = () => {
+    const focusEditorEnd = () => {
         if (editor.current) {
             editor.current.focus();
             const currentContent = editorState.getCurrentContent();
@@ -42,7 +43,7 @@ const Notes = () => {
     };
 
     const handleFocus = () => {
-        focusEditor();
+        focusEditorEnd();
         const editorDOM = editor.current?.editor;
         if (editorDOM) {
             editorDOM.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -64,25 +65,7 @@ const Notes = () => {
         { label: 'Georgia', style: 'Georgia' },
       ];
 
-    const handleKeyCommand = (command) => {
-        const newState = RichUtils.handleKeyCommand(editorState, command);
-        if (newState) {
-          setEditorState(newState);
-          return 'handled';
-        }
-        return 'not-handled';
-      };
-      const onBoldClick = () => {
-        setEditorState(RichUtils.toggleInlineStyle(editorState, 'BOLD'));
-      };
 
-      const toggleInlineStyle = (inlineStyle) => {
-        setEditorState(RichUtils.toggleInlineStyle(editorState, inlineStyle));
-      };
-
-      const toggleBlockType = (blockType) => {
-        setEditorState(RichUtils.toggleBlockType(editorState, blockType));
-      };
 
       const applyFontStyle = (editorState, fontStyle) => {
         const selection = editorState.getSelection();
@@ -109,7 +92,6 @@ const Notes = () => {
 
     useEffect(() => {
         if (urlReferralCode) {
-            // Fetch the note content from Firestore using the referral code
             const fetchNote = async () => {
                 const notesRef = collection(db, "notes");
                 const q = query(notesRef, where("referralCode", "==", urlReferralCode));
@@ -126,7 +108,7 @@ const Notes = () => {
 
     const handleEditorChange = (newEditorState) => {
         setEditorState(newEditorState);
-    };
+      };
 
     const handleImageUpload = async (event) => {
         const file = event.target.files[0];
@@ -324,9 +306,28 @@ const Notes = () => {
           </select>
 
       &nbsp; &nbsp;
-        <button className="p-2 rounded bg-white mx-2 mb-2" onClick={onBoldClick}><span><img width="20" height="20" src="https://img.icons8.com/ios-glyphs/30/bold.png" alt="bold"/></span></button>
+<button
+  className="p-2 rounded bg-white mx-2 mb-2"
+  type='button'
+  style={{ backgroundColor: isBoldActive ? 'blue' : 'white' }}
+  onMouseDown={(e) => {
+    e.preventDefault(); // Prevent the default action to keep the focus on the editor
+    setEditorState(RichUtils.toggleInlineStyle(editorState, 'BOLD')); // Update the editor state
+  }}
+>
+  <span><img width="20" height="20" src="https://img.icons8.com/ios-glyphs/30/bold.png" alt="bold"/></span>
+</button>
         &nbsp; &nbsp;
-        <button className="p-2 rounded bg-white mx-2 mb-2" onClick={() => toggleBlockType('unordered-list-item')}><span><img width="20" height="20" src="https://img.icons8.com/ios-glyphs/30/overview-pages-3--v2.png" alt="overview-pages-3--v2"/></span></button>
+        <button
+  className="p-2 rounded bg-white mx-2 mb-2"
+  type='button'
+  onMouseDown={(e) => {
+    e.preventDefault(); // Prevent the default action to keep the focus on the editor
+    setEditorState(RichUtils.toggleBlockType(editorState, 'unordered-list-item')); // Toggle bullet points
+  }}
+>
+  <span><img width="20" height="20" src="https://img.icons8.com/ios-glyphs/30/overview-pages-3--v2.png" alt="bullet points"/></span>
+</button>
         &nbsp; &nbsp;
             <input
                 type="file"
@@ -372,7 +373,7 @@ const Notes = () => {
             <div className="note-container bg-white shadow-md mx-auto my-4 p-6 max-w-screen-md rounded-lg">
                <div className="note-title text-2xl font-semibold text-gray-900 mb-4">
              </div>
-             <div onClick={focusEditor} className="DraftEditor-root min-h-[500px] text-base text-gray-800 leading-relaxed">
+             <div onClick={focusEditorEnd} className="DraftEditor-root min-h-[500px] text-base text-gray-800 leading-relaxed">
            <Editor
            ref={editor}
             editorState={editorState}
